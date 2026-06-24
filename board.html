@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>글 · My Blog</title>
-  <meta name="description" content="마크다운으로 쓰는 깔끔한 블로그">
+  <title>방명록 · My Blog</title>
+  <meta name="description" content="자유롭게 한마디 남겨주세요">
   <!-- 테마 깜빡임(FOUC) 방지: 렌더 전에 테마 적용 -->
   <script>
     (function () {
@@ -23,7 +23,7 @@
         <a class="site-title" href="index.html">My Blog</a>
         <nav class="site-nav">
           <a href="index.html">글</a>
-          <a href="board.html">방명록</a>
+          <a href="board.html" aria-current="page">방명록</a>
         </nav>
       </div>
       <button id="theme-toggle" class="theme-toggle" type="button" aria-label="테마 전환">
@@ -33,14 +33,27 @@
   </header>
 
   <main class="container">
-    <a class="back-link" href="index.html">&larr; 목록으로</a>
-    <article class="post">
-      <header class="post__header">
-        <h1 id="post-title" class="post__title">불러오는 중…</h1>
-        <time id="post-date" class="post__date"></time>
-      </header>
-      <div id="post-content" class="post__content markdown-body"></div>
-    </article>
+    <h1 class="page-title">방명록</h1>
+    <p class="board-intro">자유롭게 한마디 남겨주세요. 누구나 작성할 수 있습니다.</p>
+
+    <form id="guestbook-form" class="gb-form">
+      <div class="gb-form__row">
+        <input id="gb-name" class="gb-input" type="text" name="name"
+               placeholder="이름" maxlength="40" required autocomplete="off">
+      </div>
+      <div class="gb-form__row">
+        <textarea id="gb-message" class="gb-textarea" name="message"
+                  placeholder="내용을 입력하세요" maxlength="1000" rows="3" required></textarea>
+      </div>
+      <div class="gb-form__actions">
+        <span id="gb-status" class="gb-status" role="status" aria-live="polite"></span>
+        <button id="gb-submit" class="gb-submit" type="submit">남기기</button>
+      </div>
+    </form>
+
+    <ul id="gb-list" class="gb-list">
+      <li class="gb-list__loading">불러오는 중…</li>
+    </ul>
   </main>
 
   <footer class="site-footer">
@@ -50,7 +63,7 @@
   </footer>
 
   <script src="js/theme.js"></script>
-  <script src="js/markdown.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/board.js"></script>
 </body>
 </html>

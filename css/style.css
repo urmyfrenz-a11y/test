@@ -79,12 +79,21 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   justify-content: space-between;
   height: 60px;
 }
+.header-left { display: flex; align-items: baseline; gap: 18px; }
 .site-title {
   font-weight: 700;
   font-size: 1.2rem;
   color: var(--text);
 }
 .site-title:hover { text-decoration: none; color: var(--accent); }
+.site-nav { display: flex; gap: 14px; }
+.site-nav a {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.site-nav a:hover { color: var(--accent); text-decoration: none; }
+.site-nav a[aria-current="page"] { color: var(--text); }
 
 /* ===== 테마 토글 ===== */
 .theme-toggle {
@@ -217,6 +226,74 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   text-align: left;
 }
 .markdown-body th { background: var(--bg-elev); font-weight: 600; }
+
+/* ===== 방명록 ===== */
+.board-intro { color: var(--text-muted); margin: -8px 0 24px; }
+
+.gb-form {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 36px;
+}
+.gb-form__row { margin-bottom: 12px; }
+.gb-input,
+.gb-textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+.gb-input:focus,
+.gb-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47, 111, 235, 0.15);
+}
+.gb-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.gb-status { font-size: 0.88rem; color: var(--text-muted); }
+.gb-status--error { color: #e5484d; }
+.gb-submit {
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.gb-submit:hover { background: var(--accent-hover); }
+.gb-submit:disabled { opacity: 0.6; cursor: default; }
+
+.gb-list { list-style: none; padding: 0; margin: 0 0 60px; }
+.gb-list__loading,
+.gb-list__empty { color: var(--text-muted); padding: 16px 0; }
+.gb-entry {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.gb-entry__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.gb-entry__name { font-weight: 600; }
+.gb-entry__date { color: var(--text-muted); font-size: 0.82rem; white-space: nowrap; }
+.gb-entry__message { margin: 0; white-space: pre-wrap; word-break: break-word; }
 
 /* ===== 푸터 ===== */
 .site-footer {

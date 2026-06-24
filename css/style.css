@@ -227,6 +227,60 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 }
 .markdown-body th { background: var(--bg-elev); font-weight: 600; }
 
+/* ===== 공지사항 (홈 하단) ===== */
+.notice-section {
+  margin: 16px 0 60px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.notice-section__title { font-size: 1.4rem; margin: 0 0 16px; }
+.notice-list { list-style: none; padding: 0; margin: 0; }
+.notice-list__loading,
+.notice-list__empty { color: var(--text-muted); padding: 12px 0; }
+.notice-item {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.notice-item__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.notice-item__title { font-weight: 600; }
+.notice-item__date { color: var(--text-muted); font-size: 0.82rem; white-space: nowrap; }
+.notice-item__content { margin: 6px 0 0; color: var(--text-muted); font-size: 0.95rem; }
+
+.notice-pager {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+}
+.notice-pager__btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.notice-pager__btn:hover:not(:disabled) { border-color: var(--accent); }
+.notice-pager__btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.notice-pager__btn:disabled { opacity: 0.4; cursor: default; }
+
 /* ===== 방명록 ===== */
 .board-intro { color: var(--text-muted); margin: -8px 0 24px; }
 

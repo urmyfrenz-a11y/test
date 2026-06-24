@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>글 · My Blog</title>
+  <meta name="description" content="마크다운으로 쓰는 깔끔한 블로그">
+  <!-- 테마 깜빡임(FOUC) 방지: 렌더 전에 테마 적용 -->
+  <script>
+    (function () {
+      var saved = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="site-title" href="index.html">My Blog</a>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="테마 전환">
+        <span class="theme-toggle__icon" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <a class="back-link" href="index.html">&larr; 목록으로</a>
+    <article class="post">
+      <header class="post__header">
+        <h1 id="post-title" class="post__title">불러오는 중…</h1>
+        <time id="post-date" class="post__date"></time>
+      </header>
+      <div id="post-content" class="post__content markdown-body"></div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; <span id="year"></span> My Blog · 마크다운으로 작성</p>
+    </div>
+  </footer>
+
+  <script src="js/theme.js"></script>
+  <script src="js/markdown.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

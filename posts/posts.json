@@ -1,5 +1,11 @@
 [
   {
+    "slug": "today-i-learned",
+    "title": "오늘 배운 것",
+    "date": "2026-06-24",
+    "summary": "클로드 코드로 블로그를 만들며 정리한 HTML·CSS·JavaScript의 역할. 뼈대, 옷, 움직임으로 비유해 간단히 적었습니다."
+  },
+  {
     "slug": "test",
     "title": "파서 테스트 문서",
     "date": "2026-06-24",

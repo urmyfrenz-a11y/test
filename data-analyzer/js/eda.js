@@ -74,18 +74,23 @@
     });
 
     // 수치형 상관행렬
+    // 각 수치 컬럼의 값을 한 번만 숫자로 변환해 캐시 → 쌍마다 재변환하는 비용 제거
+    // (대용량에서 UI 멈춤을 유발하던 부분)
     const numCols = perColumn.filter((c) => c.type === "numeric");
+    const numVectors = numCols.map((c) => {
+      const name = c.name;
+      const v = new Array(n);
+      for (let k = 0; k < n; k++) v[k] = util.toNum(rows[k][name]);
+      return v;
+    });
     const corr = [];
     for (let i = 0; i < numCols.length; i++) {
       corr[i] = [];
       for (let j = 0; j < numCols.length; j++) {
         if (i === j) { corr[i][j] = 1; continue; }
         if (j < i) { corr[i][j] = corr[j][i]; continue; }
-        const r = stats.pearson(
-          rows.map((row) => row[numCols[i].name]),
-          rows.map((row) => row[numCols[j].name])
-        ).r;
-        corr[i][j] = r;
+        // 이미 숫자로 변환된 벡터 사용 → pearson 내부 toNum은 즉시 반환(빠름)
+        corr[i][j] = stats.pearson(numVectors[i], numVectors[j]).r;
       }
     }
 
@@ -112,7 +117,17 @@
       renderTextOnly(stage);
       return;
     }
-    if (!st.eda) st.eda = compute(ds);
+    // 대용량이면 계산이 수 초 걸릴 수 있으므로, 먼저 로딩을 그린 뒤 비동기로 계산
+    if (!st.eda) {
+      stage.appendChild(el("div", { class: "panel" }, [
+        el("div", { class: "loading-block" }, [
+          el("span", { class: "spinner" }),
+          `EDA 계산 중… (${util.fmtInt(ds.rows.length)}행 × ${ds.columns.length}열 — 대용량은 수 초 걸릴 수 있어요)`,
+        ]),
+      ]));
+      setTimeout(() => { st.eda = compute(ds); render(stage); }, 30);
+      return;
+    }
     const eda = st.eda;
 
     const panel = el("div", { class: "panel" });

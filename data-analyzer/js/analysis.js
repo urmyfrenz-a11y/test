@@ -8,6 +8,7 @@
   const DA = (window.DA = window.DA || {});
   const { util, stats } = DA;
   const el = util.el;
+  const num = (v) => util.toNum(v);
 
   function colByName(ds, name) { return ds.columns.find((c) => c.name === name); }
 
@@ -40,13 +41,13 @@
     // 완전한 행만 사용
     const X = [], y = [];
     ds.rows.forEach((r) => {
-      const yt = Number(r[target.column]);
-      if (!Number.isFinite(yt)) return;
+      const yt = num(r[target.column]);
+      if (yt === null || !Number.isFinite(yt)) return;
       let ok = true;
       const row = features.map((f) => {
         if (f.kind === "num") {
-          const v = Number(r[f.driver]);
-          if (!Number.isFinite(v)) { ok = false; return 0; }
+          const v = num(r[f.driver]);
+          if (v === null || !Number.isFinite(v)) { ok = false; return 0; }
           return v;
         } else {
           const v = r[f.driver];
@@ -100,8 +101,8 @@
         // 클래스별 평균
         const byClass = {};
         rows.forEach((r) => {
-          const c = r[target.column]; const v = Number(r[name]);
-          if (c == null || c === "" || !Number.isFinite(v)) return;
+          const c = r[target.column]; const v = num(r[name]);
+          if (c == null || c === "" || v === null || !Number.isFinite(v)) return;
           (byClass[c] = byClass[c] || []).push(v);
         });
         const means = Object.entries(byClass).map(([c, arr]) => ({ cls: c, mean: stats.mean(arr), n: arr.length }));

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Analyzer — 자동 데이터 분석</title>
+  <meta name="description" content="파일을 업로드하면 단계적으로 자동 데이터 분석(EDA·통계검정·인사이트·대시보드·리포트)을 수행합니다." />
+
+  <!-- FOUC 방지: 테마를 가능한 한 빨리 적용 -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('da-theme');
+        var sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', saved || sys);
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- CDN 라이브러리 (브라우저 전용) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="brand">
+        <span class="brand__logo" aria-hidden="true">📊</span>
+        <span>Data Analyzer</span>
+      </div>
+      <div class="app-header__spacer"></div>
+      <button id="restart-btn" class="icon-btn" title="처음부터 다시" aria-label="처음부터 다시">↺</button>
+      <button id="theme-toggle" class="icon-btn" title="다크 모드 전환" aria-label="다크 모드 전환">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- 진행 스텝바 -->
+    <nav class="stepper" id="stepper" aria-label="분석 진행 단계"></nav>
+
+    <!-- 각 단계 패널이 여기에 렌더링됨 -->
+    <div id="stage"></div>
+  </main>
+
+  <!-- 숨겨진 파일 입력 -->
+  <input type="file" id="file-input" multiple
+         accept=".csv,.tsv,.txt,.xlsx,.xls,.pdf,text/csv,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+         class="hidden" />
+
+  <!-- 모듈 스크립트 (역할별 분리, 전역 오염 최소화: 단일 DA 네임스페이스) -->
+  <script src="js/state.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/parsers.js"></script>
+  <script src="js/upload.js"></script>
+  <script src="js/eda.js"></script>
+  <script src="js/target.js"></script>
+  <script src="js/importance.js"></script>
+  <script src="js/analysis.js"></script>
+  <script src="js/insights.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/report.js"></script>
+  <script src="js/wizard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

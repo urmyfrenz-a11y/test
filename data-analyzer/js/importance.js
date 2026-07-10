@@ -62,8 +62,8 @@
     const groups = {};
     for (let i = 0; i < featVals.length; i++) {
       const t = targetVals[i];
-      const v = Number(featVals[i]);
-      if (t == null || t === "" || !Number.isFinite(v)) continue;
+      const v = DA.util.toNum(featVals[i]);
+      if (t == null || t === "" || v === null || !Number.isFinite(v)) continue;
       (groups[t] = groups[t] || []).push(v);
     }
     return Object.values(groups);

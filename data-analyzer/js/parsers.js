@@ -67,9 +67,9 @@
       const uniqueVals = new Set(nonNull.map((v) => String(v)));
       const unique = uniqueVals.size;
 
-      // 수치 판별
+      // 수치 판별 (통화/단위/기호 정제 후 판정)
       let numCount = 0;
-      for (const v of nonNull) if (Number.isFinite(Number(v))) numCount++;
+      for (const v of nonNull) if (util.toNum(v) !== null) numCount++;
       const numRatio = nonNull.length ? numCount / nonNull.length : 0;
 
       // 날짜 판별
@@ -206,53 +206,138 @@
     const buf = await readArrayBuffer(file);
     const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
     let fullText = "";
-    const pageTexts = [];
+    const tableAoAs = []; // { page, aoa }
     const maxPages = Math.min(pdf.numPages, 50);
     for (let i = 1; i <= maxPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const strings = content.items.map((it) => it.str);
-      const pageText = strings.join(" ");
-      pageTexts.push(pageText);
-      fullText += pageText + "\n";
+      // 텍스트 요약용 (읽기 순서: y 내림차순, x 오름차순 기반은 아래 라인 재구성에서)
+      const lines = buildLines(content.items);
+      fullText += lines.map((l) => l.items.map((c) => c.s).join(" ")).join("\n") + "\n";
+      // 좌표 기반 표 추출
+      extractTables(lines).forEach((aoa) => tableAoAs.push({ page: i, aoa }));
     }
-    // PDF 안에서 표를 best-effort로 추출 시도 (줄바꿈+공백 정렬 기반)
-    const tables = tryExtractPdfTables(pageTexts);
-    const ds = {
-      id: nextId(), name: file.name, source: file.name, kind: "text",
-      text: fullText, textStats: textStats(fullText),
-      pages: pdf.numPages,
-    };
-    const out = [ds];
-    if (tables) {
+
+    const out = [];
+    // 추출된 표 → 데이터셋 (수치 컬럼이 많고 행이 많은 표를 앞쪽=기본 대상으로)
+    const built = [];
+    tableAoAs.forEach(({ page, aoa }) => {
       try {
-        const { columns, rows } = tableFromAoA(tables, file.name);
-        if (rows.length >= 3 && columns.length >= 2) {
-          out.unshift({
-            id: nextId(), name: `${file.name} (추출된 표)`, source: file.name,
-            kind: "table", columns, rows, fromPdf: true,
-          });
+        const { columns, rows } = tableFromAoA(dropTotalsRows(aoa), file.name);
+        if (rows.length >= 2 && columns.length >= 2) {
+          const numericCols = columns.filter((c) => c.type === "numeric").length;
+          built.push({ page, columns, rows, numericCols });
         }
-      } catch (e) { /* 표 추출 실패 시 텍스트만 */ }
-    }
+      } catch (e) { /* skip */ }
+    });
+    built.sort((a, b) => b.numericCols - a.numericCols || b.rows.length - a.rows.length);
+    built.forEach((t, idx) => {
+      out.push({
+        id: nextId(),
+        name: `${file.name} · 표 ${idx + 1} (p${t.page}, ${t.rows.length}행×${t.columns.length}열)`,
+        source: file.name, kind: "table", columns: t.columns, rows: t.rows, fromPdf: true,
+      });
+    });
+
+    // 전체 텍스트 데이터셋도 항상 포함
+    out.push({
+      id: nextId(), name: `${file.name} (전체 텍스트)`, source: file.name, kind: "text",
+      text: fullText, textStats: textStats(fullText), pages: pdf.numPages,
+    });
     return out;
   }
 
-  // PDF 텍스트에서 표 후보 추출 (2칸 이상 공백을 구분자로 가정)
-  function tryExtractPdfTables(pageTexts) {
-    const allLines = pageTexts.join("\n").split(/\n/);
-    const rows = [];
-    for (const line of allLines) {
-      const cells = line.split(/\s{2,}|\t/).map((c) => c.trim()).filter((c) => c !== "");
-      if (cells.length >= 2) rows.push(cells);
+  /**
+   * pdf.js 텍스트 아이템을 시각적 행(line)으로 묶는다.
+   * 각 아이템의 좌표 transform[4]=x, transform[5]=y, width=폭 사용.
+   */
+  function buildLines(items) {
+    const cells = items
+      .filter((it) => it.str && it.str.trim() !== "")
+      .map((it) => ({
+        s: it.str.replace(/\s+/g, " ").trim(),
+        x: it.transform[4],
+        y: it.transform[5],
+        w: it.width || (it.str.length * (Math.abs(it.transform[0]) || 5)),
+        h: Math.abs(it.transform[3]) || 10,
+      }));
+    cells.sort((a, b) => b.y - a.y || a.x - b.x);
+    const lines = [];
+    for (const c of cells) {
+      let line = null;
+      for (const L of lines) {
+        if (Math.abs(L.y - c.y) <= Math.max(3, c.h * 0.5)) { line = L; break; }
+      }
+      if (!line) { line = { y: c.y, items: [] }; lines.push(line); }
+      line.items.push(c);
+      line.y = (line.y * (line.items.length - 1) + c.y) / line.items.length;
     }
-    // 열 수가 가장 흔한 값으로 정규화된 연속 구간만 채택
-    if (rows.length < 4) return null;
-    const counts = {};
-    rows.forEach((r) => (counts[r.length] = (counts[r.length] || 0) + 1));
-    const common = Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
-    const filtered = rows.filter((r) => r.length === common);
-    return filtered.length >= 4 ? filtered : null;
+    lines.sort((a, b) => b.y - a.y);
+    lines.forEach((L) => L.items.sort((a, b) => a.x - b.x));
+    return lines;
+  }
+
+  /** 한 행의 아이템들을 x-간격 기준으로 셀(열)로 분할 */
+  function splitCells(items) {
+    if (!items.length) return [];
+    const fh = Math.max(8, ...items.map((i) => i.h));
+    const gapThreshold = fh * 1.2; // 이보다 크게 벌어지면 열 경계
+    const cells = [];
+    let text = items[0].s;
+    let start = items[0].x;
+    let end = items[0].x + items[0].w;
+    for (let i = 1; i < items.length; i++) {
+      const it = items[i];
+      const gap = it.x - end;
+      if (gap > gapThreshold) {
+        cells.push({ text: text.trim(), x: start });
+        text = it.s; start = it.x;
+      } else {
+        text += (gap > fh * 0.25 ? " " : "") + it.s;
+      }
+      end = it.x + it.w;
+    }
+    cells.push({ text: text.trim(), x: start });
+    return cells;
+  }
+
+  /**
+   * 라인들에서 표 블록을 검출한다.
+   * - 각 라인을 셀로 분할 → 2개 이상 셀을 가진 라인이 연속되면 표 후보
+   * - 블록 내 최빈 열 수를 채택, 3행 이상일 때만 표로 인정
+   */
+  function extractTables(lines) {
+    const lineCells = lines.map((L) => splitCells(L.items));
+    const blocks = [];
+    let cur = [];
+    for (const lc of lineCells) {
+      if (lc.length >= 2) cur.push(lc);
+      else { if (cur.length) { blocks.push(cur); cur = []; } }
+    }
+    if (cur.length) blocks.push(cur);
+
+    const tables = [];
+    for (const block of blocks) {
+      const counts = {};
+      block.forEach((l) => (counts[l.length] = (counts[l.length] || 0) + 1));
+      const modal = Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
+      if (modal < 2) continue;
+      const kept = block.filter((l) => l.length === modal);
+      if (kept.length < 3) continue;
+      tables.push(kept.map((l) => l.map((c) => c.text)));
+    }
+    return tables;
+  }
+
+  /** 표에서 합계/총계 행 제거 (헤더는 유지). 상관/회귀 왜곡 방지. */
+  function dropTotalsRows(aoa) {
+    if (aoa.length <= 2) return aoa;
+    const re = /^(합계|총계|소계|누계|계|total|sum|평균|average)$/i;
+    return aoa.filter((row, i) => {
+      if (i === 0) return true; // 헤더
+      const first = row[0] == null ? "" : String(row[0]).trim();
+      return !re.test(first);
+    });
   }
 
   /** 파일 하나 파싱 → 데이터셋 배열 */
@@ -269,5 +354,5 @@
     }
   }
 
-  DA.parsers = { parseFile, inferColumns, tableFromAoA };
+  DA.parsers = { parseFile, inferColumns, tableFromAoA, buildLines, splitCells, extractTables };
 })();

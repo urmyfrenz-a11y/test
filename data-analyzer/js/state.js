@@ -66,6 +66,42 @@
       const label = { numeric: "수치", categorical: "범주", datetime: "날짜", text: "텍스트" }[type] || type;
       return `<span class="type-badge type-${type}">${label}</span>`;
     },
+    /**
+     * 값을 숫자로 정제해 반환. 실패하면 null.
+     * - 통화/기호/단위 제거: ₩ $ % ▲ ▼ , 명 점 원 개 건 회 배 위 인 %p 등
+     * - 배율 접미사 처리: 조(1e12) 억(1e8) 만(1e4) 천(1e3)
+     * - 방향 기호: ▲/△/+ → 양수, ▼/▽/-/− → 음수
+     * - 날짜 단위(년/월/일/시/분/초)가 남으면 숫자로 인정하지 않음 (범주/날짜 보존)
+     */
+    toNum(v) {
+      if (v == null) return null;
+      if (typeof v === "number") return Number.isFinite(v) ? v : null;
+      if (v instanceof Date) return v.getTime();
+      let s = String(v).trim();
+      if (s === "") return null;
+
+      let sign = 1;
+      const f = s[0];
+      if (f === "▲" || f === "△" || f === "+") { s = s.slice(1); }
+      else if (f === "▼" || f === "▽" || f === "-" || f === "−") { sign = -1; s = s.slice(1); }
+      s = s.replace(/^[₩$€£¥\s]+/, "").trim();
+
+      const m = s.match(/^([0-9][0-9,]*(?:\.[0-9]+)?)/);
+      if (!m) return null;
+      let num = parseFloat(m[1].replace(/,/g, ""));
+      if (!Number.isFinite(num)) return null;
+
+      let rest = s.slice(m[1].length);
+      const mag = { "조": 1e12, "억": 1e8, "만": 1e4, "천": 1e3 };
+      if (mag[rest[0]]) { num *= mag[rest[0]]; rest = rest.slice(1); }
+      rest = rest.trim();
+
+      // 날짜/시간 단위가 남으면 숫자로 보지 않음 (예: "2025년 3월")
+      if (/[년월일시분초주요]/.test(rest)) return null;
+      // 남은 문자는 허용된 단위/기호만 있어야 함
+      if (!/^[%pP‰°원명점개건회배위인개당호부팀\s,.\-)]*$/.test(rest)) return null;
+      return sign * num;
+    },
   };
 
   // 애플리케이션 공유 상태

@@ -33,6 +33,29 @@
     });
   }
 
+  /**
+   * 바이트 버퍼를 텍스트로 디코딩. 인코딩을 자동 감지한다.
+   * - BOM(UTF-8/UTF-16) 우선
+   * - UTF-8로 디코딩해 치환문자(�, U+FFFD)가 없으면 UTF-8
+   * - 있으면 EUC-KR(CP949)로 디코딩해, 치환문자가 더 적은 쪽을 선택
+   *   (한국 결제/공공 데이터 CSV는 EUC-KR인 경우가 많음)
+   */
+  function decodeText(buf) {
+    const b = new Uint8Array(buf);
+    if (b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF)
+      return new TextDecoder("utf-8").decode(buf.slice(3));
+    if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder("utf-16le").decode(buf);
+    if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder("utf-16be").decode(buf);
+
+    const utf8 = new TextDecoder("utf-8").decode(buf); // 치환 모드
+    if (utf8.indexOf("�") === -1) return utf8;
+
+    let euckr = null;
+    try { euckr = new TextDecoder("euc-kr").decode(buf); } catch (e) { return utf8; }
+    const bad = (s) => { let n = 0; for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) === 0xFFFD) n++; return n; };
+    return bad(euckr) <= bad(utf8) ? euckr : utf8;
+  }
+
   /** 2차원 배열(첫 행 = 헤더) → {columns, rows} */
   function tableFromAoA(aoa, sourceName) {
     // 빈 행 제거
@@ -135,29 +158,20 @@
     return datasets;
   }
 
-  function parseDelimited(file) {
-    return new Promise((resolve, reject) => {
-      Papa.parse(file, {
-        skipEmptyLines: "greedy",
-        dynamicTyping: false,
-        complete: (res) => {
-          try {
-            const aoa = res.data;
-            if (!aoa.length) return reject(new Error("빈 파일"));
-            const { columns, rows } = tableFromAoA(aoa, file.name);
-            resolve([{
-              id: nextId(), name: file.name, source: file.name,
-              kind: "table", columns, rows,
-            }]);
-          } catch (e) { reject(e); }
-        },
-        error: (err) => reject(err),
-      });
-    });
+  async function parseDelimited(file) {
+    const text = decodeText(await readArrayBuffer(file));
+    const res = Papa.parse(text, { skipEmptyLines: "greedy", dynamicTyping: false });
+    const aoa = res.data;
+    if (!aoa || !aoa.length) throw new Error("빈 파일");
+    const { columns, rows } = tableFromAoA(aoa, file.name);
+    return [{
+      id: nextId(), name: file.name, source: file.name,
+      kind: "table", columns, rows,
+    }];
   }
 
   async function parseText(file) {
-    const text = await readText(file);
+    const text = decodeText(await readArrayBuffer(file));
     // 구분자 감지: 탭/콤마가 여러 줄에 일관되면 표로 처리
     const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
     const delim = detectDelimiter(lines.slice(0, 20));

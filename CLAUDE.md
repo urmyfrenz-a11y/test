@@ -74,6 +74,17 @@ my-blog/
 - JavaScript는 모듈 단위로 역할을 분리하고, 전역 오염을 피하세요.
 - 시맨틱 HTML(`<article>`, `<nav>`, `<main>`, `<time>` 등)과 접근성(alt, aria, 키보드 포커스)을 지키세요.
 
+## 사용자 안내 규칙 (중요)
+
+- 사용자가 외부 대시보드(Vercel, GitHub 등)에서 **직접 수동 작업**을 해야 할 때는,
+  "○○ 탭 클릭 → ⋯ 메뉴" 같은 말로만 된 경로 안내를 하지 말고 **항상 정확한 클릭 가능한 URL**을
+  함께 제공하세요. 가능하면 해당 작업을 바로 할 수 있는 페이지의 직접 링크를 줍니다.
+- 이 프로젝트 관련 주요 링크(참고):
+  - Vercel 프로젝트: https://vercel.com/hichul-kim-s-projects/test
+  - Vercel 배포 목록: https://vercel.com/hichul-kim-s-projects/test/deployments
+  - Vercel Git 설정: https://vercel.com/hichul-kim-s-projects/test/settings/git
+  - GitHub 저장소: https://github.com/urmyfrenz-a11y/test
+
 ## 실행 / 미리보기
 
 정적 사이트이므로 로컬 서버로 확인합니다 (파일 fetch가 `file://`에서 막힐 수 있으므로 서버 권장):
